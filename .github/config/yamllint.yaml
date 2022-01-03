@@ -1,0 +1,58 @@
+ignore: |
+  pkg/strava
+
+rules:
+  braces:
+    max-spaces-inside: 1
+    max-spaces-inside-empty: 0
+    min-spaces-inside: 1
+    min-spaces-inside-empty: 0
+  brackets:
+    max-spaces-inside: 0
+    max-spaces-inside-empty: 0
+    min-spaces-inside: 0
+    min-spaces-inside-empty: 0
+  colons:
+    max-spaces-after: 1
+    max-spaces-before: 0
+  commas:
+    max-spaces-after: 1
+    max-spaces-before: 0
+    min-spaces-after: 1
+  comments:
+    min-spaces-from-content: 1
+    require-starting-space: true
+  comments-indentation: {}
+  document-end:
+    present: false
+  empty-lines:
+    max: 1
+    max-end: 0
+    max-start: 0
+  empty-values:
+    forbid-in-block-mappings: true
+    forbid-in-flow-mappings: true
+  hyphens:
+    max-spaces-after: 1
+  indentation:
+    check-multi-line-strings: false
+    indent-sequences: true
+    spaces: 2
+  key-duplicates: {}
+  key-ordering:
+    level: warning
+  line-length:
+    allow-non-breakable-inline-mappings: true
+    allow-non-breakable-words: true
+    ignore: .github/workflows/publish.yaml
+    max: 100
+  new-line-at-end-of-file: {}
+  new-lines:
+    type: unix
+  octal-values:
+    forbid-explicit-octal: false
+    forbid-implicit-octal: true
+  quoted-strings:
+    quote-type: double
+    required: only-when-needed
+  trailing-spaces: {}

@@ -1,0 +1,20 @@
+{{define "content"}}
+<div class="rate-limit-page">
+    <div class="container">
+        <h1>Rate-Limit erreicht</h1>
+        <p>
+            Strava erlaubt nur eine maximale Anzahl von 100 Requests pro 15
+            Minuten und 1000 Requests pro Tag. Bei einem Export wird für jede
+            Aktivität ein Request abgeschickt, wodurch das Rate-Limit schnell
+            erreicht werden kann. Probier es einfach in 15 Minuten oder morgen
+            noch einmal.
+        </p>
+        <p>
+            <a href="https://github.com/aschbacd/strava-export" target="_blank"
+                >Strava-Export</a
+            >
+            kann auch selbst gehostet werden.
+        </p>
+    </div>
+</div>
+{{end}}

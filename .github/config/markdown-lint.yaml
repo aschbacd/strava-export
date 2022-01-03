@@ -1,0 +1,10 @@
+# Line length <https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#md013>
+MD013:
+  line_length: 100
+  tables: false
+
+# Fenced code blocks should have a language specified
+# <https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#md040>
+MD040: false
+
+default: true # includes/excludes all rules by default

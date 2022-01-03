@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="activities-page">
+    <div class="container">
+        <h1>Aktivitäten</h1>
+        <div class="controls">
+            <form method="get">
+                <input name="from" type="date" value="{{ .from }}" />
+                <input name="to" type="date" value="{{ .to }}" />
+                <input type="submit" value="Suchen" formaction="/" />
+                <input type="submit" value="Export" formaction="/export" />
+            </form>
+            <form method="post" action="/logout">
+                <input type="submit" value="Ausloggen" />
+            </form>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Name</th>
+                    <th>Strecke</th>
+                    <th>Zeit</th>
+                    <th>Höhenzunahme</th>
+                    <th>Kilojoules</th>
+                    <th>Ø Geschwindigkeit</th>
+                    <th>Ø Watt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .activities }}
+                <tr>
+                    <td>{{ .Date }}</td>
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Distance }}</td>
+                    <td>{{ .Duration }}</td>
+                    <td>{{ .ElevationGain }}</td>
+                    <td>{{ .Kilojoules }}</td>
+                    <td>{{ .AverageSpeed }}</td>
+                    <td>{{ .AverageWatts }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+        <div class="page-links">
+            {{ if .hasBefore }}
+            <a href="{{ .linkBefore }}">Zurück</a>
+            {{ end }} {{ if .hasAfter }}
+            <a href="{{ .linkAfter }}">Weiter</a>
+            {{ end }}
+        </div>
+    </div>
+</div>
+{{end}}

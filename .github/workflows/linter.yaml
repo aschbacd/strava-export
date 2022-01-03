@@ -1,0 +1,47 @@
+name: Lint Code Base
+
+on:
+  pull_request: {}
+  push: {}
+
+jobs:
+  # Git lint (only for pull requests)
+  gitlint:
+    if: github.event_name == 'pull_request'
+    name: Git Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint commits, branches, and pull requests
+        uses: aschbacd/gitlint-action@v1.0.2
+        with:
+          commit-message-body-max-length: 72
+          commit-message-subject-max-length: 50
+          prohibit-unknown-commit-authors: true
+          prohibit-unknown-commit-committers: true
+          re-branch-name: ^(feature|bug|hotfix|release)\/([A-Z]+\-[0-9]+|[a-z\-0-9]+)$
+          re-commit-message-subject: ^(\[[A-Z]+\-[0-9]+\] )?[A-Z].*((?!\.).)$
+          re-pull-request-title: ^(\[[A-Z]+\-[0-9]+\] )?[A-Z].*((?!\.).)$
+  # Markdown lint
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Lint files
+        uses: docker://avtodev/markdown-lint:v1
+        with:
+          args: ./
+          config: ./.github/config/markdown-lint.yaml
+          ignore: ./pkg/strava # Ignore generated code
+  # YAML lint
+  yamllint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Lint yaml files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          config_data: ./.github/config/yamllint.yaml
