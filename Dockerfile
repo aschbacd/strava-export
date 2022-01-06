@@ -5,6 +5,12 @@ WORKDIR /go/src/github.com/aschbacd/strava-export
 RUN go build -a -tags netgo -ldflags '-w' -o /go/bin/strava-export /go/src/github.com/aschbacd/strava-export
 
 # Package
-FROM scratch
-COPY --from=base /go/bin/strava-export /strava-export
-ENTRYPOINT ["/strava-export"]
+FROM alpine:3.15.0
+RUN apk update && apk add ca-certificates
+
+COPY --from=base /go/bin/strava-export /usr/share/strava-export/strava-export
+COPY ./assets /usr/share/strava-export/assets
+COPY ./views /usr/share/strava-export/views
+
+WORKDIR /usr/share/strava-export
+ENTRYPOINT ["./strava-export"]
