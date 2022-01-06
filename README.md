@@ -10,9 +10,9 @@ variables can be used:
 
 | Environment variable | Description                                       | Default                 |
 | -------------------- | ------------------------------------------------- | ----------------------- |
-| HTTP_ADDRESS         | Address used to launch server                     | `localhost`             |
-| HTTP_PORT            | Port used to launch server                        | `8080`                  |
-| HTTP_DEBUG           | Enable debug logging for http server              | `false`                 |
+| ADDRESS              | Address used to launch server                     | `localhost`             |
+| PORT                 | Port used to launch server                        | `8080`                  |
+| DEBUG                | Enable debug logging for http server              | `false`                 |
 | STRAVA_CLIENT_ID     | Strava Application client id                      | `-`                     |
 | STRAVA_CLIENT_SECRET | Strava Application client secret                  | `-`                     |
 | BASE_URL             | Base url for application (used for auth redirect) | `http://localhost:8080` |

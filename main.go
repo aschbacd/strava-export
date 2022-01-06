@@ -19,7 +19,7 @@ func main() {
 	godotenv.Load()
 
 	// Debug logs
-	if os.Getenv("HTTP_DEBUG") != "true" {
+	if os.Getenv("DEBUG") != "true" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -65,5 +65,5 @@ func main() {
 	auth.GET("/export", controllers.ExportData)
 	auth.POST("/logout", controllers.Logout)
 
-	r.Run(utils.GetEnv("HTTP_ADDRESS", "localhost") + ":" + utils.GetEnv("HTTP_PORT", "8080"))
+	r.Run(utils.GetEnv("ADDRESS", "localhost") + ":" + utils.GetEnv("PORT", "8080"))
 }
