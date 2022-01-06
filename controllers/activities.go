@@ -83,12 +83,20 @@ func GetActivitiesPage(c *gin.Context) {
 	linkAfter.Set("page", fmt.Sprint(pageNumber+1))
 
 	// Get activities (not detailed)
-	activities, errors := getActivities(c, athleteActivityOpts, false)
-	if len(errors) > 0 {
+	activities, rateLimitReached, errors := getActivities(c, athleteActivityOpts, false)
+	if len(errors) > 0 || rateLimitReached {
+		// Log all errors
 		for _, err := range errors {
 			logger.Error(err.Error())
 		}
-		utils.ReturnErrorPage(c)
+
+		// Check if rate limit reached
+		if rateLimitReached {
+			c.Redirect(http.StatusFound, "/rate-limit")
+		} else {
+			utils.ReturnErrorPage(c)
+		}
+
 		return
 	}
 
@@ -132,11 +140,11 @@ func setAthleteActivitiesOpts(c *gin.Context, athleteActivityOpts *swagger.Activ
 }
 
 // getActivities generates a formatted list of activities
-func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetLoggedInAthleteActivitiesOpts, detailed bool) ([]Activity, []error) {
+func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetLoggedInAthleteActivitiesOpts, detailed bool) ([]Activity, bool, []error) {
 	// Get token source from authentication middleware
 	tokenSource, exists := c.Get("tokenSource")
 	if !exists {
-		return nil, []error{fmt.Errorf("client not passed by authentication middleware")}
+		return nil, false, []error{fmt.Errorf("client not passed by authentication middleware")}
 	}
 
 	// Create new swagger client
@@ -148,8 +156,11 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 
 	// Get activities from Strava
 	stravaActivities, resp, _ := client.ActivitiesApi.GetLoggedInAthleteActivities(auth, &athleteActivityOpts)
-	if resp.StatusCode != http.StatusOK {
-		return nil, []error{fmt.Errorf("failed to get activity summary")}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, true, []error{fmt.Errorf("rate limit reached")}
+	} else if resp.StatusCode != http.StatusOK {
+		fmt.Println(resp.StatusCode)
+		return nil, false, []error{fmt.Errorf("failed to get activity summary")}
 	}
 
 	// Create channels for details
@@ -208,7 +219,7 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 		errors = append(errors, err)
 	}
 
-	return activities, errors
+	return activities, false, errors
 }
 
 // getActivityDetails fetches the details for an activity and pushes it to a channel

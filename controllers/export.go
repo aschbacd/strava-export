@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"net/http"
 	"sort"
 
 	"github.com/antihax/optional"
@@ -49,12 +50,20 @@ func ExportData(c *gin.Context) {
 	}
 
 	// Get activities (detailed)
-	activities, errors := getActivities(c, athleteActivityOpts, true)
-	if len(errors) > 0 {
+	activities, rateLimitReached, errors := getActivities(c, athleteActivityOpts, true)
+	if len(errors) > 0 || rateLimitReached {
+		// Log all errors
 		for _, err := range errors {
 			logger.Error(err.Error())
 		}
-		utils.ReturnErrorPage(c)
+
+		// Check if rate limit reached
+		if rateLimitReached {
+			c.Redirect(http.StatusFound, "/rate-limit")
+		} else {
+			utils.ReturnErrorPage(c)
+		}
+
 		return
 	}
 
