@@ -31,10 +31,10 @@ func main() {
 	r.Static("/assets", "./assets")
 
 	// Session storage
-	// TODO: implement best practices
-	store := cookie.NewStore([]byte("secret"))
+	store := cookie.NewStore([]byte(utils.GetRandomString(64)))
 	r.Use(sessions.Sessions("session", store))
 
+	// OAuth config
 	config := &oauth2.Config{
 		ClientID:     os.Getenv("STRAVA_CLIENT_ID"),
 		ClientSecret: os.Getenv("STRAVA_CLIENT_SECRET"),
@@ -48,7 +48,7 @@ func main() {
 
 	authController := controllers.AuthController{OAuthConfig: *config}
 
-	// Routes
+	// Unauthenticated routes
 	r.GET("/login", authController.GetLoginPage)
 	r.GET("/authenticate", authController.AuthenticateUser)
 	r.GET("/rate-limit", func(c *gin.Context) {
@@ -58,6 +58,7 @@ func main() {
 		c.HTML(http.StatusInternalServerError, "error", nil)
 	})
 
+	// Authenticated routes
 	auth := r.Group("")
 	auth.Use(authController.AuthMiddleware())
 	auth.GET("/", controllers.GetActivitiesPage)

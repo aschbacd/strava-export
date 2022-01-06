@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"sort"
+
 	"github.com/antihax/optional"
 	"github.com/aschbacd/strava-export/pkg/logger"
 	swagger "github.com/aschbacd/strava-export/pkg/strava"
@@ -39,7 +41,7 @@ func ExportData(c *gin.Context) {
 		"Max. Herzfrequenz",
 		"Ø Watt",
 		"Max. Watt",
-		"Gerät",
+		"Rad",
 	}); err != nil {
 		logger.Error(err.Error())
 		utils.ReturnErrorPage(c)
@@ -47,12 +49,19 @@ func ExportData(c *gin.Context) {
 	}
 
 	// Get activities (detailed)
-	activities, err := getActivities(c, athleteActivityOpts, true)
-	if err != nil {
-		logger.Error(err.Error())
+	activities, errors := getActivities(c, athleteActivityOpts, true)
+	if len(errors) > 0 {
+		for _, err := range errors {
+			logger.Error(err.Error())
+		}
 		utils.ReturnErrorPage(c)
 		return
 	}
+
+	// Sort activities
+	sort.Slice(activities, func(i, j int) bool {
+		return activities[i].Timestamp < activities[j].Timestamp
+	})
 
 	// Add activities to Excel file
 	for i, activity := range activities {
@@ -70,7 +79,7 @@ func ExportData(c *gin.Context) {
 			activity.MaxHeartRate,
 			activity.AverageWatts,
 			activity.MaxWatts,
-			activity.DeviceName,
+			activity.GearName,
 		}); err != nil {
 			logger.Error(err.Error())
 			utils.ReturnErrorPage(c)
