@@ -4,49 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/antihax/optional"
+	"github.com/aschbacd/strava-export/models"
 	"github.com/aschbacd/strava-export/pkg/logger"
 	swagger "github.com/aschbacd/strava-export/pkg/strava"
 	"github.com/aschbacd/strava-export/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
-
-// Activity represents a formatted activity
-type Activity struct {
-	Id               int64
-	Timestamp        int64
-	Date             string
-	Name             string
-	Distance         string
-	Duration         string
-	ElevationGain    string
-	AverageSpeed     string
-	MaxSpeed         string
-	AverageCadence   string
-	AverageHeartRate string
-	MaxHeartRate     string
-	AverageWatts     string
-	MaxWatts         string
-	Calories         string
-	Kilojoules       string
-	GearName         string
-}
-
-// ActivityDetails contains detailed information about the activity
-type ActivityDetails struct {
-	AverageCadence   float32 `json:"average_cadence"`
-	AverageHeartRate float32 `json:"average_heartrate"`
-	MaxHeartRate     float32 `json:"max_heartrate"`
-	Calories         float32 `json:"calories"`
-	Gear             struct {
-		Name string `json:"name"`
-	} `json:"gear"`
-}
 
 // GetActivitiesPage returns the activities page
 func GetActivitiesPage(c *gin.Context) {
@@ -140,7 +110,7 @@ func setAthleteActivitiesOpts(c *gin.Context, athleteActivityOpts *swagger.Activ
 }
 
 // getActivities generates a formatted list of activities
-func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetLoggedInAthleteActivitiesOpts, detailed bool) ([]Activity, bool, []error) {
+func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetLoggedInAthleteActivitiesOpts, detailed bool) ([]models.Activity, bool, []error) {
 	// Get token source from authentication middleware
 	tokenSource, exists := c.Get("tokenSource")
 	if !exists {
@@ -152,7 +122,7 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 	auth := context.WithValue(context.Background(), swagger.ContextOAuth2, tokenSource)
 
 	// Create list
-	activities := []Activity{}
+	activities := []models.Activity{}
 
 	// Get activities from Strava
 	stravaActivities, resp, _ := client.ActivitiesApi.GetLoggedInAthleteActivities(auth, &athleteActivityOpts)
@@ -164,7 +134,7 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 	}
 
 	// Create channels for details
-	channelActivities := make(chan Activity, 100)
+	channelActivities := make(chan models.Activity, 100)
 	channelErrors := make(chan error, 100)
 
 	var wg sync.WaitGroup
@@ -172,26 +142,26 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 
 	// Add activities to list
 	for _, stravaActivity := range stravaActivities {
-		// Parse duration from seconds
+		// Convert int into duration
 		duration, err := time.ParseDuration(fmt.Sprint(stravaActivity.MovingTime) + "s")
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to convert int into duration"))
 		}
 
 		// Create activity
-		activity := Activity{
+		activity := models.Activity{
 			Id:            stravaActivity.Id,
-			Timestamp:     stravaActivity.StartDate.Unix(),
 			Name:          stravaActivity.Name,
-			Date:          stravaActivity.StartDateLocal.Format("02.01.2006 15:04:05"),
-			Distance:      fmt.Sprintf("%.2f", stravaActivity.Distance/1000) + "km",
-			Duration:      duration.String(),
-			ElevationGain: fmt.Sprint(stravaActivity.TotalElevationGain) + "m",
-			AverageSpeed:  fmt.Sprintf("%.2f", stravaActivity.AverageSpeed*3.6) + "km/h",
-			MaxSpeed:      fmt.Sprintf("%.2f", stravaActivity.MaxSpeed*3.6) + "km/h",
-			AverageWatts:  fmt.Sprint(stravaActivity.AverageWatts),
-			MaxWatts:      fmt.Sprint(stravaActivity.MaxWatts),
-			Kilojoules:    fmt.Sprintf("%.2f", stravaActivity.Kilojoules),
+			Date:          stravaActivity.StartDate,
+			DateLocal:     stravaActivity.StartDateLocal,
+			Distance:      math.Round(float64(stravaActivity.Distance/10)) / 100,
+			Duration:      duration,
+			ElevationGain: math.Round(float64(stravaActivity.TotalElevationGain*100)) / 100,
+			AverageSpeed:  math.Round(float64(stravaActivity.AverageSpeed*360)) / 100,
+			MaxSpeed:      math.Round(float64(stravaActivity.MaxSpeed*360)) / 100,
+			AverageWatts:  math.Round(float64(stravaActivity.AverageWatts*100)) / 100,
+			MaxWatts:      stravaActivity.MaxWatts,
+			Kilojoules:    math.Round(float64(stravaActivity.Kilojoules*100)) / 100,
 		}
 
 		// Get activity details
@@ -223,31 +193,36 @@ func getActivities(c *gin.Context, athleteActivityOpts swagger.ActivitiesApiGetL
 }
 
 // getActivityDetails fetches the details for an activity and pushes it to a channel
-func getActivityDetails(c *gin.Context, activity Activity, activities chan<- Activity, errors chan<- error, wg *sync.WaitGroup) {
+func getActivityDetails(c *gin.Context, activity models.Activity, activities chan<- models.Activity, errors chan<- error, wg *sync.WaitGroup) {
 	// Get client from authentication middleware
 	client, exists := c.Get("client")
 	if !exists {
 		errors <- fmt.Errorf("client not passed by authentication middleware")
+		wg.Done()
+		return
 	}
 
 	// JSON response must be used instead of Object because some attributes are not supported
 	resp, err := client.(*http.Client).Get("https://www.strava.com/api/v3/activities/" + fmt.Sprint(activity.Id))
 	if err != nil {
 		errors <- err
+		wg.Done()
+		return
 	}
 
 	defer resp.Body.Close()
-
-	stravaActivityDetails := ActivityDetails{}
+	var stravaActivityDetails models.ActivityDetails
 	if err = json.NewDecoder(resp.Body).Decode(&stravaActivityDetails); err != nil {
 		errors <- err
+		wg.Done()
+		return
 	}
 
-	// Set details
-	activity.AverageCadence = fmt.Sprintf("%.2f", stravaActivityDetails.AverageCadence)
-	activity.AverageHeartRate = fmt.Sprintf("%.2f", stravaActivityDetails.AverageHeartRate)
-	activity.MaxHeartRate = fmt.Sprintf("%.2f", stravaActivityDetails.MaxHeartRate)
-	activity.Calories = fmt.Sprintf("%.2f", stravaActivityDetails.Calories)
+	// Set activity details
+	activity.AverageCadence = math.Round(float64(stravaActivityDetails.AverageCadence*100)) / 100
+	activity.AverageHeartRate = math.Round(float64(stravaActivityDetails.AverageHeartRate*100)) / 100
+	activity.MaxHeartRate = math.Round(float64(stravaActivityDetails.MaxHeartRate*100)) / 100
+	activity.Calories = math.Round(float64(stravaActivityDetails.Calories*100)) / 100
 	activity.GearName = stravaActivityDetails.Gear.Name
 
 	// Push activity to activities

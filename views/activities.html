@@ -13,34 +13,38 @@
                 <input type="submit" value="Ausloggen" />
             </form>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Name</th>
-                    <th>Strecke</th>
-                    <th>Zeit</th>
-                    <th>Höhenzunahme</th>
-                    <th>Kilojoules</th>
-                    <th>Ø Geschwindigkeit</th>
-                    <th>Ø Watt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{ range .activities }}
-                <tr>
-                    <td>{{ .Date }}</td>
-                    <td>{{ .Name }}</td>
-                    <td>{{ .Distance }}</td>
-                    <td>{{ .Duration }}</td>
-                    <td>{{ .ElevationGain }}</td>
-                    <td>{{ .Kilojoules }}</td>
-                    <td>{{ .AverageSpeed }}</td>
-                    <td>{{ .AverageWatts }}</td>
-                </tr>
-                {{ end }}
-            </tbody>
-        </table>
+        <div class="table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Uhrzeit</th>
+                        <th>Name</th>
+                        <th>Strecke [km]</th>
+                        <th>Zeit</th>
+                        <th>Höhenzunahme [m]</th>
+                        <th>Kilojoules</th>
+                        <th>Ø Geschwindigkeit [km/h]</th>
+                        <th>Ø Watt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .activities }}
+                    <tr>
+                        <td>{{ .GetDateString }}</td>
+                        <td>{{ .GetTimeString }}</td>
+                        <td>{{ .Name }}</td>
+                        <td>{{ .Distance }}</td>
+                        <td>{{ .Duration.String }}</td>
+                        <td>{{ .ElevationGain }}</td>
+                        <td>{{ .Kilojoules }}</td>
+                        <td>{{ .AverageSpeed }}</td>
+                        <td>{{ .AverageWatts }}</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
         <div class="page-links">
             {{ if .hasBefore }}
             <a href="{{ .linkBefore }}">Zurück</a>

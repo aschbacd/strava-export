@@ -54,6 +54,10 @@ a {
     margin-bottom: 10px;
 }
 
+.activities-page .table {
+    overflow-x: auto;
+}
+
 .activities-page table {
     width: 100%;
     border-collapse: collapse;
