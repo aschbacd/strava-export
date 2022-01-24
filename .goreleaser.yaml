@@ -1,0 +1,48 @@
+archives:
+  - files:
+      - assets
+      - views
+    format_overrides:
+      - format: zip
+        goos: windows
+    replacements:
+      386: i386
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
+    goos:
+      - linux
+      - windows
+      - darwin
+    ignore:
+      - goarch: arm
+        goos: windows
+
+changelog:
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - Merge pull request
+      - Merge branch
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  name_template: "{{ .ProjectName }} {{ .Tag }}"
+  prerelease: auto
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
