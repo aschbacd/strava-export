@@ -30,7 +30,7 @@ jobs:
       # Generate tags/labels
       - id: docker_meta
         name: Docker meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
